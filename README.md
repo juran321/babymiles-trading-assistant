@@ -19,7 +19,19 @@ A Hermes Agent skill for moomoo OpenAPI trading — market data, position monito
 
 ## Install
 
-### 1. Clone the skill
+### Option 1: Hermes CLI (推荐)
+
+```bash
+hermes skills install https://github.com/juran321/babymiles-trading-assistant/blob/main/SKILL.md
+```
+
+Or install by skill name if published to the hub:
+```bash
+hermes skills search babymiles
+hermes skills install babymiles-trading-assistant
+```
+
+### Option 2: Manual Clone
 
 ```bash
 cd ~/.hermes/skills
