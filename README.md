@@ -1,0 +1,112 @@
+# BabyMiles Trading Assistant
+
+A Hermes Agent skill for moomoo OpenAPI trading — market data, position monitoring, auto stop-loss/take-profit, and one-click liquidation.
+
+## Features
+
+| Script | Purpose |
+|--------|---------|
+| `analyze_stock.py` | Comprehensive stock analysis: real-time quote, K-line trend, capital flow, options chain, news, and rating |
+| `auto_stop_loss_take_profit.py` | Monitor positions and auto-sell when stop-loss or take-profit thresholds are hit |
+| `liquidate_all.py` | One-click sell all positions at market price |
+| `draw_kline.py` | Generate K-line (candlestick) charts |
+
+## Prerequisites
+
+- [moomoo OpenD](https://www.moomoo.com/download/OpenAPI) running on your server (default ports 11111/22222)
+- Python 3.10+ with moomoo SDK installed
+- Hermes Agent with skill support
+
+## Install
+
+### 1. Clone the skill
+
+```bash
+cd ~/.hermes/skills
+git clone https://github.com/juran321/babymiles-trading-assistant.git
+```
+
+### 2. Set up moomoo OpenD config
+
+Create `~/.hermes/skills/moomooapi/scripts/config.yaml` (or use the [moomooapi skill](https://github.com/hermes-agent/skills)):
+
+```yaml
+opend:
+  host: "127.0.0.1"
+  port: 11111
+  telnet_port: 22222
+
+trading:
+  default_market: "US"
+  trd_env: "REAL"      # or "SIMULATE" for paper trading
+  security_firm: "FUTUINC"
+```
+
+### 3. Verify OpenD is running and unlocked
+
+```bash
+python3 ~/.hermes/skills/moomooapi/scripts/trade/get_portfolio.py --json
+```
+
+## Usage
+
+### Analyze a stock
+
+```bash
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/analyze_stock.py US.TSLA
+```
+
+### Auto stop-loss / take-profit (dry-run first)
+
+```bash
+# Monitor all positions, default -5% stop-loss / +10% take-profit
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/auto_stop_loss_take_profit.py --monitor --dry-run
+
+# Run as daemon (auto-sell when thresholds hit)
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/auto_stop_loss_take_profit.py --daemon --interval 60
+
+# Custom thresholds for a specific stock
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/auto_stop_loss_take_profit.py --code US.TSLA --stop-loss 8 --take-profit 15
+```
+
+### Liquidate all positions
+
+```bash
+# Preview what will be sold
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/liquidate_all.py --dry-run
+
+# Execute (requires confirmation)
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/liquidate_all.py --confirmed
+
+# Force sell without confirmation (use with caution)
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/liquidate_all.py --force
+
+# Sell only one stock
+python3 ~/.hermes/skills/babymiles-trading-assistant/scripts/liquidate_all.py --code US.VGT --confirmed
+```
+
+## Skill Integration (Hermes Agent)
+
+Once installed in `~/.hermes/skills/`, Hermes Agent can invoke these scripts automatically:
+
+```
+User: "Analyze TSLA for me"
+Agent: Runs analyze_stock.py and returns formatted report
+
+User: "Set stop-loss at -3% for my positions"
+Agent: Runs auto_stop_loss_take_profit.py with custom thresholds
+
+User: "Sell everything"
+Agent: Runs liquidate_all.py --dry-run first, asks for confirmation
+```
+
+## Safety Notes
+
+- All trading scripts require `--confirmed` or `--force` to execute actual orders
+- `--dry-run` mode previews actions without placing orders
+- Auto stop-loss/take-profit runs locally and polls at the specified interval
+- Real trading environment (`REAL`) is default — use `SIMULATE` for testing
+
+## License
+
+MIT
