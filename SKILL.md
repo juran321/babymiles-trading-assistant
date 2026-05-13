@@ -22,7 +22,26 @@ metadata:
 
 ## Environment Setup
 
-### 1. Check OpenD Status
+### 1. Prerequisites
+
+```bash
+# 1. Install moomoo OpenD
+#    Download: https://www.moomoo.com/download/OpenAPI
+
+# 2. Configure your account in OpenD.xml, then start OpenD
+#    <login_account>YOUR_ACCOUNT</login_account>
+#    <login_pwd>YOUR_PASSWORD</login_pwd>
+
+# 3. Install Python SDK
+pip install moomoo-api
+
+# 4. Test connection (reads market data & positions)
+python3 ~/.hermes/skills/moomooapi/scripts/trade/get_portfolio.py --json
+```
+
+> **Trading (buy/sell/stop-loss/liquidate) requires `unlock_trade`.** Market data and position queries work without it. Run unlock only when you need to place orders.
+
+### 2. Check OpenD Status
 ```bash
 # Check if OpenD is running
 ps aux | grep OpenD | grep -v grep
@@ -31,13 +50,13 @@ ps aux | grep OpenD | grep -v grep
 netstat -tlnp | grep 11111
 ```
 
-### 2. Python Environment
+### 3. Python Environment
 ```bash
 # Must set before running any script
 export PYTHONPATH=/usr/local/lib/python3.12/dist-packages:$PYTHONPATH
 ```
 
-### 3. Check Account Type (Futu vs Moomoo)
+### 4. Check Account Type (Futu vs Moomoo)
 
 **Query account list:**
 ```bash
@@ -61,7 +80,7 @@ python3 scripts/trade/get_accounts.py --json
 }
 ```
 
-### 4. Account Info (Real Account)
+### 5. Account Info (Real Account)
 - Account ID: `283445329850596671`
 - Security Firm: `FUTUINC`
 - Market: US
@@ -355,7 +374,9 @@ nc 127.0.0.1 22222
 | Trade not unlocked | unlock_trade not executed | User runs unlock_trade script themselves |
 | NumPy version conflict | pandas/numexpr compiled version mismatch | `pip install --upgrade pandas matplotlib --break-system-packages` |
 | `position_list_query` returns empty | Passing `acc_id` directly causes `Nonexisting acc_id` error | Use `create_trade_context()` + `refresh_cache=True` without `acc_id`. See `references/moomoo-api-pitfalls.md` |
-| P/L ratio display wrong | `pl_ratio_avg_cost` is already a percentage (0.57 = 0.57%), not decimal | Do NOT multiply by 100. See field mapping below. |
+| P/L ratio display wrong | `pl_ratio_avg_cost` is already a percentage (0.57 = 0.57%), not decimal | Do NOT multiply by 100. See field mapping above and `references/moomoo-api-pitfalls.md` |
+| `auto_stop_loss_take_profit.py` shows wrong P/L | Same as above — script was patched to use correct field names and percentage format | Pull latest from repo |
+| `liquidate_all.py` shows "No positions" | Same root cause — `acc_id` passed directly to `position_list_query` | Pull latest from repo |
 | unlock_trade not in telnet | Moomoo OpenD telnet doesn't support unlock | Use Python SDK unlock_trade() |
 | OpenD disconnects | Process crashed | Check logs, restart OpenD |
 
@@ -373,6 +394,48 @@ pip install --upgrade pandas matplotlib --break-system-packages
 pip install pandas --force-reinstall --break-system-packages
 ```
 
+## Publishing This Skill to GitHub
+
+When the user asks to publish/push this skill to GitHub:
+
+1. Check git config: `git config --global user.name` and `user.email`
+2. If not set, ask user for GitHub username and email
+3. Install `gh` CLI if missing: `apt-get install gh`
+4. Authenticate: `echo "TOKEN" | gh auth login --with-token`
+5. In the skill directory:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   gh repo create REPO_NAME --public --source=. --push
+   ```
+6. If push fails with "could not read Username", use credential helper:
+   ```bash
+   git config credential.helper store
+   echo "https://USERNAME:TOKEN@github.com" > ~/.git-credentials
+   git push
+   rm -f ~/.git-credentials
+   ```
+7. Fix wrong commit author:
+   ```bash
+   git config user.name "CORRECT_USERNAME"
+   git commit --amend --reset-author --no-edit
+   git push --force-with-lease
+   ```
+8. Add README.md with install instructions (natural language + CLI + manual + Claude Code)
+9. README must be English-only, CLI-first format for prerequisites
+10. README must include moomoo account setup (`OpenD.xml` credentials, `unlock_trade` snippet)
+11. Commit and push README
+
+**Pitfalls:**
+- `gh repo create --source=. --push` only works on initial create. Subsequent pushes need credential helper.
+- Wrong `git config user.name` causes commits to show wrong author. Fix with `--amend --reset-author`.
+- User may have multiple GitHub accounts (e.g. `bakernomange` vs `juran321`). Confirm which account to use.
+- README must be English-only per user preference.
+- README prerequisites should be CLI commands, not bullet lists.
+
+Full workflow details: `references/github-publish-workflow.md`
+
 ## Related Skills
 
 - moomooapi: Basic quotes and trading
@@ -384,9 +447,11 @@ pip install pandas --force-reinstall --break-system-packages
 
 ## References
 
-- `references/multi-skill-orchestration.md` — How analyze_stock.py aggregates multiple skills
+- `references/github-publish-workflow.md` — Step-by-step guide for publishing Hermes skills to GitHub (gh CLI, credential handling, author fix, README format requirements: English-only, CLI-first prerequisites, Claude Code install option, moomoo account setup)
+- `references/moomoo-api-pitfalls.md` — Critical API pitfalls when writing custom trading scripts (position query field names, acc_id handling, P/L ratio format)
 - `references/numpy-compatibility.md` — NumPy 2.x compatibility fixes
 - `references/user-preferences.md` — User profile and communication preferences
+- `references/multi-skill-orchestration.md` — How analyze_stock.py aggregates multiple skills
 
 ## Templates
 
@@ -395,3 +460,5 @@ pip install pandas --force-reinstall --break-system-packages
 ## Scripts
 
 - `scripts/analyze_stock.py` - Comprehensive stock analysis (calls multiple skills)
+- `scripts/auto_stop_loss_take_profit.py` - Auto stop-loss / take-profit monitor. Monitors all positions, sells when P/L hits thresholds. Defaults: SL -5%, TP +10%. Supports `--monitor` (one-shot), `--daemon` (continuous), `--interval N` (seconds), `--code` (target single stock), `--dry-run`.
+- `scripts/liquidate_all.py` - One-click liquidate all positions. Supports `--dry-run` (preview only), `--confirmed` (skip confirmation prompt), `--force` (skip LIQUIDATE typing), `--code` (target single stock). Requires `--confirmed` for live execution.
