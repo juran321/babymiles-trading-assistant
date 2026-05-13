@@ -16,6 +16,10 @@ A Hermes Agent skill for moomoo OpenAPI trading — market data, position monito
 - [moomoo OpenD](https://www.moomoo.com/download/OpenAPI) running on your server (default ports 11111/22222)
 - Python 3.10+ with moomoo SDK installed
 - Hermes Agent with skill support
+- **moomoo account credentials** configured in OpenD (`login_account` and `login_pwd` in `OpenD.xml`)
+- **Trade unlocked** — run `unlock_trade` via moomoo SDK after OpenD starts (required for placing orders)
+
+> **Note:** Market data queries work without unlock, but all trading functions (buy/sell/stop-loss/liquidate) require `unlock_trade` to be called first.
 
 ## Install
 
@@ -81,9 +85,16 @@ Then reference the skill in your Claude Code session:
 Use the babymiles-trading-assistant skill to analyze TSLA
 ```
 
-### 2. Set up moomoo OpenD config
+### 2. Configure moomoo OpenD
 
-Create `~/.hermes/skills/moomooapi/scripts/config.yaml` (or use the [moomooapi skill](https://www.moomoo.com/skillhub/openapi)):
+1. **Set your moomoo account credentials** in `OpenD.xml`:
+
+```xml
+<login_account>YOUR_MOOMOO_ACCOUNT</login_account>
+<login_pwd>YOUR_PASSWORD</login_pwd>
+```
+
+2. **Create the skill config** at `~/.hermes/skills/moomooapi/scripts/config.yaml` (or use the [moomooapi skill](https://www.moomoo.com/skillhub/openapi)):
 
 ```yaml
 opend:
@@ -96,6 +107,20 @@ trading:
   trd_env: "REAL"      # or "SIMULATE" for paper trading
   security_firm: "FUTUINC"
 ```
+
+3. **Unlock trade** after OpenD starts (required for placing orders):
+
+```python
+from moomoo import OpenSecTradeContext, SecurityFirm
+from moomoo.trade.trade_unlock import TradeUnlock
+
+ctx = OpenSecTradeContext(filter_trdmarket=TrdMarket.US, host='127.0.0.1', port=11111, security_firm=SecurityFirm.FUTUINC)
+ret, data = ctx.unlock_trade(password='YOUR_TRADE_PASSWORD', password_md5=None)
+print('Unlock result:', ret, data)
+ctx.close()
+```
+
+Or use the moomooapi skill's unlock helper.
 
 ### 3. Verify OpenD is running and unlocked
 
