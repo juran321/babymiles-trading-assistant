@@ -19,7 +19,7 @@ A Hermes Agent skill for moomoo OpenAPI trading — market data, position monito
 
 ## Install
 
-### Option 1: Natural Language (Recommended)
+### Option 1: Natural Language (Recommended for Hermes Agent)
 
 Simply tell your Hermes Agent:
 
@@ -55,6 +55,30 @@ hermes skills install babymiles-trading-assistant
 ```bash
 cd ~/.hermes/skills
 git clone https://github.com/juran321/babymiles-trading-assistant.git
+```
+
+### Option 4: Claude Code
+
+In Claude Code, add this repository as a skill source:
+
+```bash
+# Add the repo as a skill tap
+claude skills tap add https://github.com/juran321/babymiles-trading-assistant
+
+# Then install the skill
+claude skills install babymiles-trading-assistant
+```
+
+Or manually clone to Claude Code's skills directory:
+
+```bash
+cd ~/.claude/skills  # or wherever Claude Code stores skills
+git clone https://github.com/juran321/babymiles-trading-assistant.git
+```
+
+Then reference the skill in your Claude Code session:
+```
+Use the babymiles-trading-assistant skill to analyze TSLA
 ```
 
 ### 2. Set up moomoo OpenD config
