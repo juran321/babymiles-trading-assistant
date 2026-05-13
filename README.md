@@ -13,13 +13,29 @@ A Hermes Agent skill for moomoo OpenAPI trading — market data, position monito
 
 ## Prerequisites
 
-- [moomoo OpenD](https://www.moomoo.com/download/OpenAPI) running on your server (default ports 11111/22222)
-- Python 3.10+ with moomoo SDK installed
-- Hermes Agent with skill support
-- **moomoo account credentials** configured in OpenD (`login_account` and `login_pwd` in `OpenD.xml`)
-- **Trade unlocked** — run `unlock_trade` via moomoo SDK after OpenD starts (required for placing orders)
+```bash
+# 1. moomoo OpenD running (ports 11111/22222)
+#    Download: https://www.moomoo.com/download/OpenAPI
 
-> **Note:** Market data queries work without unlock, but all trading functions (buy/sell/stop-loss/liquidate) require `unlock_trade` to be called first.
+# 2. Configure credentials in OpenD.xml
+#    <login_account>YOUR_ACCOUNT</login_account>
+#    <login_pwd>YOUR_PASSWORD</login_pwd>
+
+# 3. Python 3.10+ with moomoo SDK
+pip install moomoo-api
+
+# 4. Hermes Agent with skill support
+
+# 5. Unlock trade (required for placing orders)
+python3 -c "
+from moomoo import OpenSecTradeContext, TrdMarket, SecurityFirm
+ctx = OpenSecTradeContext(filter_trdmarket=TrdMarket.US, host='127.0.0.1', port=11111, security_firm=SecurityFirm.FUTUINC)
+ctx.unlock_trade(password='YOUR_TRADE_PASSWORD')
+ctx.close()
+"
+```
+
+> **Note:** Market data works without unlock, but trading (buy/sell/stop-loss/liquidate) requires `unlock_trade`.
 
 ## Install
 
