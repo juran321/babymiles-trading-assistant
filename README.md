@@ -59,7 +59,7 @@ git clone https://github.com/juran321/babymiles-trading-assistant.git
 
 ### 2. Set up moomoo OpenD config
 
-Create `~/.hermes/skills/moomooapi/scripts/config.yaml` (or use the [moomooapi skill](https://github.com/hermes-agent/skills)):
+Create `~/.hermes/skills/moomooapi/scripts/config.yaml` (or use the [moomooapi skill](https://www.moomoo.com/skillhub/openapi)):
 
 ```yaml
 opend:
